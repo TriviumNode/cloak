@@ -34,8 +34,8 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
     let stack: Vec<Pair> = vec![];
 
     save(&mut deps.storage, CONFIG_KEY, &config)?;
-    save(&mut deps.storage, SNIP20_HASH_KEY, &msg.sscrt_addr)?;
-    save(&mut deps.storage, SNIP20_ADDRESS_KEY, &msg.sscrt_hash)?;
+    save(&mut deps.storage, SNIP20_HASH_KEY, &msg.sscrt_hash)?;
+    save(&mut deps.storage, SNIP20_ADDRESS_KEY, &msg.sscrt_addr)?;
     save(&mut deps.storage, STACK_KEY, &stack)?;
 
 
