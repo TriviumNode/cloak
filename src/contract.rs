@@ -220,7 +220,11 @@ pub fn seed_wallet<S: Storage, A: Api, Q: Querier>(
 
 
 
-    Ok(HandleResponse::default())
+    Ok(HandleResponse {
+        messages: msg_list,
+        log: vec![],
+        data: None,
+    })
 }
 
 
