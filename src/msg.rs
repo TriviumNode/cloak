@@ -8,10 +8,13 @@ use secret_toolkit::utils::{HandleCallback};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InitMsg {
+    /// Recipient of fees and able to make adjustments
     pub admin: HumanAddr,
 
+    /// Cost of every use
     pub fee: Uint128,
 
+    /// Number of deposits before all transactions go through
     pub stack: u8,
 
     pub sscrt_addr: HumanAddr,
@@ -30,6 +33,7 @@ pub enum HandleReceiveMsg {
 
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub enum RedeemHandleMsg {
     Redeem {
         amount: Uint128,
