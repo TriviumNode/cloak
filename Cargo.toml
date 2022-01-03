@@ -40,4 +40,13 @@ schemars = "0.7"
 serde = { version = "1.0.103", default-features = false, features = ["derive"] }
 snafu = { version = "0.6.3" }
 
+
+rand_chacha = { version = "0.2.2", default-features = false }
+rand_core = { version =  "0.5.1", default-features = false }
+base64 = "0.12.3"
+sha2 = { version = "0.9.1", default-features = false }
+
+rand = "0.7.3"
+
+
 secret-toolkit = { git = "https://github.com/enigmampc/secret-toolkit", rev = "52df67c2becf98510fa55bdad5edf0e2dd11f5a6" }

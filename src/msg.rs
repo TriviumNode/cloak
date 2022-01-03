@@ -15,10 +15,15 @@ pub struct InitMsg {
     pub fee: Uint128,
 
     /// Number of deposits before all transactions go through
-    pub stack: u8,
+    pub min_stack: u8,
+    pub max_stack: u8,
 
     pub sscrt_addr: HumanAddr,
     pub sscrt_hash: String,
+
+
+    pub entropy: String,
+
 }
 
 
@@ -65,7 +70,8 @@ pub enum HandleMsg {
         new_fee: Uint128,
     },
     ChangeStackSize {
-        new_stack_size: u8,
+        new_stack_max: u8,
+        new_stack_min: u8,
     },
     ChangeAdmin {
         new_admin: HumanAddr,
@@ -83,6 +89,7 @@ pub enum QueryMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
     pub active: bool,
-    pub stack_size: u8,
+    pub stack_min: u8,
+    pub stack_max: u8,
     pub fee: Uint128
 }

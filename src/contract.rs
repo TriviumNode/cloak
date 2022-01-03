@@ -4,8 +4,11 @@ use cosmwasm_std::{
 };
 
 use crate::msg::{ConfigResponse, HandleMsg, HandleReceiveMsg, InitMsg, QueryMsg, RedeemHandleMsg};
-use crate::state::{Config, Pair, save, load, STACK_KEY, SNIP20_ADDRESS_KEY, SNIP20_HASH_KEY, CONFIG_KEY};
+use crate::state::{Config, Pair, save, load, STACK_KEY, STACK_SIZE_KEY, SNIP20_ADDRESS_KEY, SNIP20_HASH_KEY, CONFIG_KEY, PRNG_SEED_KEY};
 
+use crate::rand::{sha_256, Prng};
+use rand_chacha::ChaChaRng;
+use rand::{RngCore, SeedableRng};
 
 //Snip 20 usage
 use secret_toolkit::{snip20::handle::{register_receive_msg,transfer_msg}, 
@@ -26,17 +29,26 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
     let config = Config {
         admin: deps.api.canonical_address(&msg.admin)?,
         active: true,
-        stack_size: msg.stack,
+
+
+
+        min_stack: msg.min_stack,
+        max_stack: msg.max_stack,
+
         fee: msg.fee,
 
     };
 
+    let prng_seed: Vec<u8> = sha_256(base64::encode(msg.entropy).as_bytes()).to_vec();
+
     let stack: Vec<Pair> = vec![];
 
+    save(&mut deps.storage, PRNG_SEED_KEY, &prng_seed)?;
     save(&mut deps.storage, CONFIG_KEY, &config)?;
     save(&mut deps.storage, SNIP20_HASH_KEY, &msg.sscrt_hash)?;
     save(&mut deps.storage, SNIP20_ADDRESS_KEY, &msg.sscrt_addr)?;
     save(&mut deps.storage, STACK_KEY, &stack)?;
+    save(&mut deps.storage, STACK_SIZE_KEY, &msg.max_stack)?;
 
 
     Ok(InitResponse {
@@ -61,7 +73,7 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
     match msg {
         HandleMsg::Receive { sender, from, amount, msg } => receive(deps, env, sender, from, amount, msg),
         HandleMsg::ChangeFee { new_fee } => change_fee(deps, env, new_fee),
-        HandleMsg::ChangeStackSize { new_stack_size } => change_stack_size(deps, env, new_stack_size),
+        HandleMsg::ChangeStackSize { new_stack_max, new_stack_min } => change_stack_size(deps, env, new_stack_max, new_stack_min),
         HandleMsg::ChangeAdmin { new_admin } => change_admin(deps, env, new_admin),
     }
 }
@@ -139,6 +151,7 @@ pub fn seed_wallet<S: Storage, A: Api, Q: Querier>(
 
     let mut msg_list: Vec<CosmosMsg> = vec![];
 
+    let mut stack_size: u8 = load(&deps.storage, STACK_SIZE_KEY)?;
     let snip20_address: HumanAddr = load(&deps.storage, SNIP20_ADDRESS_KEY)?;
     let callback_code_hash: String = load(&deps.storage, &SNIP20_HASH_KEY)?;
 
@@ -173,7 +186,7 @@ pub fn seed_wallet<S: Storage, A: Api, Q: Querier>(
 
 
     // If stack is ready to send through all tx
-    if stack.len() >= config.stack_size as usize {
+    if stack.len() >= stack_size as usize {
 
         // Convert all funds to SCRT
         let mut redeemable_funds: u128 = 0;
@@ -213,6 +226,13 @@ pub fn seed_wallet<S: Storage, A: Api, Q: Querier>(
 
         stack = vec![];
 
+        //Assign new value to stack_size
+        let prng_seed: Vec<u8> = load(&mut deps.storage, PRNG_SEED_KEY)?;
+        let random_seed  = new_entropy(&env,prng_seed.as_ref(),prng_seed.as_ref());
+        let mut rng = ChaChaRng::from_seed(random_seed);
+
+        stack_size =(rng.next_u32() % (config.max_stack as u32 - config.min_stack as u32 + 1) + config.min_stack as u32 ) as u8;
+        save(&mut deps.storage, STACK_SIZE_KEY, &stack_size)?;
 
     }
     save(&mut deps.storage, STACK_KEY, &stack)?;    
@@ -228,6 +248,21 @@ pub fn seed_wallet<S: Storage, A: Api, Q: Querier>(
 }
 
 
+
+
+pub fn new_entropy(env: &Env, seed: &[u8], entropy: &[u8])-> [u8;32]{
+    // 16 here represents the lengths in bytes of the block height and time.
+    let entropy_len = 16 + env.message.sender.len() + entropy.len();
+    let mut rng_entropy = Vec::with_capacity(entropy_len);
+    rng_entropy.extend_from_slice(&env.block.height.to_be_bytes());
+    rng_entropy.extend_from_slice(&env.block.time.to_be_bytes());
+    rng_entropy.extend_from_slice(&env.message.sender.0.as_bytes());
+    rng_entropy.extend_from_slice(entropy);
+
+    let mut rng = Prng::new(seed, &rng_entropy);
+
+    rng.rand_bytes()
+}
 
 
 
@@ -264,7 +299,8 @@ pub fn change_fee<S: Storage, A: Api, Q: Querier>(
 pub fn change_stack_size<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
     env: Env,
-    new_stack_size: u8,
+    new_stack_max: u8,
+    new_stack_min: u8
 ) -> StdResult<HandleResponse> {
     let mut config: Config = load(&deps.storage, CONFIG_KEY)?;
     let sender_raw = deps.api.canonical_address(&env.message.sender)?;
@@ -275,7 +311,8 @@ pub fn change_stack_size<S: Storage, A: Api, Q: Querier>(
         ));
     }
 
-    config.stack_size = new_stack_size;
+    config.max_stack = new_stack_max;
+    config.min_stack = new_stack_min;
 
     save(&mut deps.storage, CONFIG_KEY, &config)?;
 
@@ -326,6 +363,6 @@ fn query_config<S: Storage, A: Api, Q: Querier>(deps: &Extern<S, A, Q>) -> StdRe
     let config: Config = load(&deps.storage, CONFIG_KEY)?;
 
 
-    Ok(ConfigResponse { active: config.active, stack_size: config.stack_size, fee: config.fee })
+    Ok(ConfigResponse { active: config.active, stack_max: config.max_stack, stack_min: config.min_stack, fee: config.fee })
 }
 

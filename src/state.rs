@@ -12,7 +12,11 @@ use cosmwasm_std::{Api, BlockInfo, CanonicalAddr, ReadonlyStorage, StdError, Std
 //use cosmwasm_storage::{PrefixedStorage, ReadonlyPrefixedStorage};
 
 pub static CONFIG_KEY: &[u8] = b"config";
+pub static STACK_SIZE_KEY: &[u8] = b"stacksize";
 pub static STACK_KEY: &[u8] = b"stack";
+
+
+pub static PRNG_SEED_KEY: &[u8] = b"prng";
 
 /// prefix for the storage of snip20 address
 pub const SNIP20_ADDRESS_KEY: &[u8] = b"sscrt";
@@ -26,8 +30,10 @@ pub struct Config {
     // Marks whether txs are allowed to be sent
     pub active: bool,
 
-    // Number of inputs before pool is allowed to transfer stack
-    pub stack_size: u8,
+
+    // Range that the next stack will be randomly assigned as
+    pub min_stack: u8,
+    pub max_stack: u8,
 
     // Minimum amount of funds that can be sent through the contract
     pub fee: Uint128,
