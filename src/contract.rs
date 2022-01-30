@@ -72,6 +72,7 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
 ) -> StdResult<HandleResponse> {
     match msg {
         HandleMsg::Receive { sender, from, amount, msg } => receive(deps, env, sender, from, amount, msg),
+        HandleMsg::ExitPool { } => exit_pool(deps, env),
         HandleMsg::ChangeFee { new_fee } => change_fee(deps, env, new_fee),
         HandleMsg::ChangeStackSize { new_stack_max, new_stack_min } => change_stack_size(deps, env, new_stack_max, new_stack_min),
         HandleMsg::ChangeAdmin { new_admin } => change_admin(deps, env, new_admin),
@@ -246,6 +247,68 @@ pub fn seed_wallet<S: Storage, A: Api, Q: Querier>(
         data: None,
     })
 }
+
+
+
+
+pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
+    deps: &mut Extern<S, A, Q>,
+    env: Env,
+) -> StdResult<HandleResponse> { 
+
+    
+
+
+    let sender_raw = deps.api.canonical_address(&env.message.sender)?;
+
+
+
+    let mut stack: Vec<Pair> = load(&deps.storage, &STACK_KEY)?;
+
+    let mut returnable_funds: u128 = 0;
+    let mut n: usize = 0;
+
+    while n < stack.len() {
+        if stack[n].recipient == sender_raw{
+            returnable_funds = returnable_funds + stack[n].gas.u128();
+            stack.swap_remove(n);
+            n=n-1;
+        }
+    }
+
+    save(&mut deps.storage, STACK_KEY, &stack)?;
+
+
+    let mut msg_list: Vec<CosmosMsg> = vec![];
+    let snip20_address: HumanAddr = load(&deps.storage, SNIP20_ADDRESS_KEY)?;
+    let callback_code_hash: String = load(&deps.storage, &SNIP20_HASH_KEY)?;
+
+    let padding: Option<String> = None;
+    let block_size = BLOCK_SIZE;
+    
+    let amount = Uint128::from(returnable_funds);
+    let fee_recipient: HumanAddr = deps.api.human_address(&sender_raw)?;
+    let cosmos_msg = transfer_msg(
+        fee_recipient,
+        amount,
+        padding.clone(),
+        block_size.clone(),
+        callback_code_hash.clone(),
+        snip20_address.clone(),
+    )?;
+    msg_list.push(cosmos_msg);
+
+
+
+
+    Ok(HandleResponse {
+        messages: msg_list,
+        log: vec![],
+        data: None,
+    })
+}
+
+
 
 
 

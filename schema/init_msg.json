@@ -3,12 +3,58 @@
   "title": "InitMsg",
   "type": "object",
   "required": [
-    "count"
+    "admin",
+    "entropy",
+    "fee",
+    "max_stack",
+    "min_stack",
+    "sscrt_addr",
+    "sscrt_hash"
   ],
   "properties": {
-    "count": {
+    "admin": {
+      "description": "Recipient of fees and able to make adjustments",
+      "allOf": [
+        {
+          "$ref": "#/definitions/HumanAddr"
+        }
+      ]
+    },
+    "entropy": {
+      "type": "string"
+    },
+    "fee": {
+      "description": "Cost of every use",
+      "allOf": [
+        {
+          "$ref": "#/definitions/Uint128"
+        }
+      ]
+    },
+    "max_stack": {
       "type": "integer",
-      "format": "int32"
+      "format": "uint8",
+      "minimum": 0.0
+    },
+    "min_stack": {
+      "description": "Number of deposits before all transactions go through",
+      "type": "integer",
+      "format": "uint8",
+      "minimum": 0.0
+    },
+    "sscrt_addr": {
+      "$ref": "#/definitions/HumanAddr"
+    },
+    "sscrt_hash": {
+      "type": "string"
+    }
+  },
+  "definitions": {
+    "HumanAddr": {
+      "type": "string"
+    },
+    "Uint128": {
+      "type": "string"
     }
   }
 }

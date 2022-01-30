@@ -3,12 +3,51 @@
   "title": "HandleMsg",
   "anyOf": [
     {
+      "description": "Receive Snip20 Payment",
       "type": "object",
       "required": [
-        "increment"
+        "receive"
       ],
       "properties": {
-        "increment": {
+        "receive": {
+          "type": "object",
+          "required": [
+            "amount",
+            "from",
+            "sender"
+          ],
+          "properties": {
+            "amount": {
+              "$ref": "#/definitions/Uint128"
+            },
+            "from": {
+              "$ref": "#/definitions/HumanAddr"
+            },
+            "msg": {
+              "default": null,
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Binary"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "sender": {
+              "$ref": "#/definitions/HumanAddr"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "exit_pool"
+      ],
+      "properties": {
+        "exit_pool": {
           "type": "object"
         }
       }
@@ -16,22 +55,79 @@
     {
       "type": "object",
       "required": [
-        "reset"
+        "change_fee"
       ],
       "properties": {
-        "reset": {
+        "change_fee": {
           "type": "object",
           "required": [
-            "count"
+            "new_fee"
           ],
           "properties": {
-            "count": {
+            "new_fee": {
+              "$ref": "#/definitions/Uint128"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "change_stack_size"
+      ],
+      "properties": {
+        "change_stack_size": {
+          "type": "object",
+          "required": [
+            "new_stack_max",
+            "new_stack_min"
+          ],
+          "properties": {
+            "new_stack_max": {
               "type": "integer",
-              "format": "int32"
+              "format": "uint8",
+              "minimum": 0.0
+            },
+            "new_stack_min": {
+              "type": "integer",
+              "format": "uint8",
+              "minimum": 0.0
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "change_admin"
+      ],
+      "properties": {
+        "change_admin": {
+          "type": "object",
+          "required": [
+            "new_admin"
+          ],
+          "properties": {
+            "new_admin": {
+              "$ref": "#/definitions/HumanAddr"
             }
           }
         }
       }
     }
-  ]
+  ],
+  "definitions": {
+    "Binary": {
+      "description": "Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.\n\nThis is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>",
+      "type": "string"
+    },
+    "HumanAddr": {
+      "type": "string"
+    },
+    "Uint128": {
+      "type": "string"
+    }
+  }
 }

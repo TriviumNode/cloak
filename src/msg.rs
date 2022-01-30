@@ -66,6 +66,8 @@ pub enum HandleMsg {
         #[serde(default)]
         msg: Option<Binary>,
     },
+    ExitPool {
+    },
     ChangeFee {
         new_fee: Uint128,
     },
