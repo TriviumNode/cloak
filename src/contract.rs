@@ -269,7 +269,9 @@ pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
         if stack[n].recipient == sender_raw{
             returnable_funds = returnable_funds + stack[n].gas.u128();
             stack.swap_remove(n);
-            n=n-1;
+        }
+        else {
+            n=n+1;
         }
     }
 
@@ -277,7 +279,7 @@ pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
 
 
     let mut msg_list: Vec<CosmosMsg> = vec![];
-    /* 
+    
     let snip20_address: HumanAddr = load(&deps.storage, SNIP20_ADDRESS_KEY)?;
     let callback_code_hash: String = load(&deps.storage, SNIP20_HASH_KEY)?;
 
@@ -289,14 +291,14 @@ pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
     let cosmos_msg = transfer_msg(
         recipient,
         amount,
-        padding.clone(),
-        block_size.clone(),
-        callback_code_hash.clone(),
-        snip20_address.clone(),
+        padding,
+        block_size,
+        callback_code_hash,
+        snip20_address,
     )?;
     msg_list.push(cosmos_msg);
 
-    */
+    
 
 
     Ok(HandleResponse {
