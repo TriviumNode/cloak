@@ -256,9 +256,6 @@ pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
     env: Env,
 ) -> StdResult<HandleResponse> { 
 
-    
-
-
     let sender_raw = deps.api.canonical_address(&env.message.sender)?;
 
 
@@ -280,16 +277,17 @@ pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
 
 
     let mut msg_list: Vec<CosmosMsg> = vec![];
+    /* 
     let snip20_address: HumanAddr = load(&deps.storage, SNIP20_ADDRESS_KEY)?;
-    let callback_code_hash: String = load(&deps.storage, &SNIP20_HASH_KEY)?;
+    let callback_code_hash: String = load(&deps.storage, SNIP20_HASH_KEY)?;
 
     let padding: Option<String> = None;
     let block_size = BLOCK_SIZE;
     
     let amount = Uint128::from(returnable_funds);
-    let fee_recipient: HumanAddr = deps.api.human_address(&sender_raw)?;
+    let recipient: HumanAddr = deps.api.human_address(&sender_raw)?;
     let cosmos_msg = transfer_msg(
-        fee_recipient,
+        recipient,
         amount,
         padding.clone(),
         block_size.clone(),
@@ -298,7 +296,7 @@ pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
     )?;
     msg_list.push(cosmos_msg);
 
-
+    */
 
 
     Ok(HandleResponse {
