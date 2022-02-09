@@ -77,6 +77,9 @@ pub enum HandleMsg {
     },
     ChangeAdmin {
         new_admin: HumanAddr,
+    },
+    ForcePool {
+
     }
 }
 

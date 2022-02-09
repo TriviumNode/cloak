@@ -76,6 +76,7 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
         HandleMsg::ChangeFee { new_fee } => change_fee(deps, env, new_fee),
         HandleMsg::ChangeStackSize { new_stack_max, new_stack_min } => change_stack_size(deps, env, new_stack_max, new_stack_min),
         HandleMsg::ChangeAdmin { new_admin } => change_admin(deps, env, new_admin),
+        HandleMsg::ForcePool { } => force_pool(deps, env),
     }
 }
 
@@ -141,7 +142,7 @@ pub fn seed_wallet<S: Storage, A: Api, Q: Querier>(
 ) -> StdResult<HandleResponse> {
 
 
-    if !config.active && deps.api.canonical_address(&env.message.sender)? != config.admin {
+    if !config.active {
         return Err(StdError::generic_err(
             "Transfers are currently disabled",
         ));
@@ -410,6 +411,95 @@ pub fn change_admin<S: Storage, A: Api, Q: Querier>(
 }
 
 
+
+// If pool needs to be pushed through prior to an update
+pub fn force_pool<S: Storage, A: Api, Q: Querier>(
+    deps: &mut Extern<S, A, Q>,
+    env: Env,
+) -> StdResult<HandleResponse> {
+    let config: Config = load(&deps.storage, CONFIG_KEY)?;
+    let sender_raw = deps.api.canonical_address(&env.message.sender)?;
+
+    if config.admin != sender_raw {
+        return Err(StdError::generic_err(
+            "This function is only usable by the Admin",
+        ));
+    }
+
+    
+
+    let mut msg_list: Vec<CosmosMsg> = vec![];
+
+    let snip20_address: HumanAddr = load(&deps.storage, SNIP20_ADDRESS_KEY)?;
+    let callback_code_hash: String = load(&deps.storage, &SNIP20_HASH_KEY)?;
+
+
+    let padding: Option<String> = None;
+
+
+    // Convert all funds to SCRT
+    let mut stack: Vec<Pair> = load(&deps.storage, &STACK_KEY)?;
+    let mut redeemable_funds: u128 = 0;
+    for pair in stack.iter() {
+        redeemable_funds = redeemable_funds + pair.gas.u128();
+    }
+
+    let redeem_msg = RedeemHandleMsg::Redeem {
+        amount: Uint128::from(redeemable_funds),
+        denom: Some("uscrt".to_string()),
+        padding
+    };
+
+    let cosmos_msg = redeem_msg.to_cosmos_msg(
+        callback_code_hash,
+        snip20_address,
+        None,
+    )?;
+    msg_list.push(cosmos_msg);
+
+
+    // Send all SCRT
+    for pair in stack.iter() {
+
+        let withdrawal_coins: Vec<Coin> = vec![Coin {
+            denom: "uscrt".to_string(),
+            amount: pair.gas,
+        }];
+
+        let cosmos_msg = CosmosMsg::Bank(BankMsg::Send {
+            from_address: env.contract.address.clone(),
+            to_address: deps.api.human_address(&pair.recipient)?,
+            amount: withdrawal_coins,
+        });
+        msg_list.push(cosmos_msg);
+    }
+
+    stack = vec![];
+
+    //Assign new value to stack_size
+    let prng_seed: Vec<u8> = load(&mut deps.storage, PRNG_SEED_KEY)?;
+    let random_seed  = new_entropy(&env,prng_seed.as_ref(),prng_seed.as_ref());
+    let mut rng = ChaChaRng::from_seed(random_seed);
+
+    let stack_size =(rng.next_u32() % (config.max_stack as u32 - config.min_stack as u32 + 1) + config.min_stack as u32 ) as u8;
+    save(&mut deps.storage, STACK_SIZE_KEY, &stack_size)?;
+
+
+    save(&mut deps.storage, STACK_KEY, &stack)?;    
+
+
+
+
+    Ok(HandleResponse {
+        messages: msg_list,
+        log: vec![],
+        data: None,
+    })
+
+
+
+
+}
 
 
 
