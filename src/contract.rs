@@ -141,7 +141,7 @@ pub fn seed_wallet<S: Storage, A: Api, Q: Querier>(
 ) -> StdResult<HandleResponse> {
 
 
-    if !config.active {
+    if !config.active && deps.api.canonical_address(&env.message.sender)? != config.admin {
         return Err(StdError::generic_err(
             "Transfers are currently disabled",
         ));
@@ -180,6 +180,7 @@ pub fn seed_wallet<S: Storage, A: Api, Q: Querier>(
 
     let new_pair = Pair {
         recipient: deps.api.canonical_address(&recipient)?,
+        sender: deps.api.canonical_address(&env.message.sender)?,
         gas: gas_amount
     };
 
@@ -266,7 +267,7 @@ pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
     let mut n: usize = 0;
 
     while n < stack.len() {
-        if stack[n].recipient == sender_raw{
+        if stack[n].sender == sender_raw{
             returnable_funds = returnable_funds + stack[n].gas.u128();
             stack.swap_remove(n);
         }

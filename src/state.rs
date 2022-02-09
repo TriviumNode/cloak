@@ -44,6 +44,7 @@ pub struct Config {
 #[derive(Serialize, Deserialize, Clone, JsonSchema, PartialEq, Debug)]
 pub struct  Pair {
     pub recipient: CanonicalAddr,
+    pub sender: CanonicalAddr,
     pub gas: Uint128
 }
 
