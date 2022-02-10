@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    to_binary, from_binary, Api, Binary, BankMsg, Coin, Env, Extern, HandleResponse, HandleResult, InitResponse, Querier,
+    to_binary, from_binary, log, Api, Binary, BankMsg, Coin, Env, Extern, HandleResponse, HandleResult, InitResponse, Querier,
     StdError, StdResult, Storage, Uint128, HumanAddr, CanonicalAddr, CosmosMsg
 };
 
@@ -159,7 +159,6 @@ pub fn seed_wallet<S: Storage, A: Api, Q: Querier>(
 
 
     let padding: Option<String> = None;
-    let block_size = BLOCK_SIZE;
 
 
     // Admin Fee
@@ -169,7 +168,7 @@ pub fn seed_wallet<S: Storage, A: Api, Q: Querier>(
         fee_recipient,
         amount,
         padding.clone(),
-        block_size.clone(),
+        BLOCK_SIZE,
         callback_code_hash.clone(),
         snip20_address.clone(),
     )?;
@@ -286,26 +285,29 @@ pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
     let callback_code_hash: String = load(&deps.storage, SNIP20_HASH_KEY)?;
 
     let padding: Option<String> = None;
-    let block_size = BLOCK_SIZE;
     
     let amount = Uint128::from(returnable_funds);
-    let recipient: HumanAddr = deps.api.human_address(&sender_raw)?;
+    let recipient: HumanAddr = env.message.sender;
     let cosmos_msg = transfer_msg(
-        recipient,
+        recipient.clone(),
         amount,
         padding,
-        block_size,
+        BLOCK_SIZE,
         callback_code_hash,
         snip20_address,
     )?;
     msg_list.push(cosmos_msg);
 
     
-
+    let amount_str = format!("{} ", amount);
+    let recipient_str = format!("{} ", recipient);
 
     Ok(HandleResponse {
         messages: msg_list,
-        log: vec![],
+        log: vec![
+            log("amount", &amount_str),
+            log("recipient", &recipient_str)
+        ],
         data: None,
     })
 }
