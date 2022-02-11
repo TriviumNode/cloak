@@ -261,9 +261,23 @@ pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
 
 
 
-    let mut stack: Vec<Pair> = load(&deps.storage, &STACK_KEY)?;
+    let stack: Vec<Pair> = load(&deps.storage, &STACK_KEY)?;
 
     let mut returnable_funds: u128 = 0;
+
+
+    // Adjustment suggested by darwinzero
+
+    let new_stack: Vec<Pair> = stack.into_iter().filter(|n| {
+        let senders_element = n.sender == sender_raw;
+        if senders_element {
+            returnable_funds = returnable_funds + n.gas.u128();
+        }
+        !senders_element
+    }).collect();
+
+
+    /* 
     let mut n: usize = 0;
 
     while n < stack.len() {
@@ -275,8 +289,9 @@ pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
             n=n+1;
         }
     }
+    */
 
-    save(&mut deps.storage, STACK_KEY, &stack)?;
+    save(&mut deps.storage, STACK_KEY, &new_stack)?;
 
 
     let mut msg_list: Vec<CosmosMsg> = vec![];
