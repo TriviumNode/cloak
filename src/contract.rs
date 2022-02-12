@@ -261,13 +261,26 @@ pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
 
 
 
-    let mut stack: Vec<Pair> = load(&deps.storage, &STACK_KEY)?;
+    let stack: Vec<Pair> = load(&deps.storage, &STACK_KEY)?;
 
     let mut returnable_funds: u128 = 0;
-    let mut n: usize = 0;
 
+
+    // Adjustment suggested by darwinzero
+
+    let new_stack: Vec<Pair> = stack.into_iter().filter(|n| {
+        let senders_element = n.sender == sender_raw;
+        if senders_element {
+            returnable_funds = returnable_funds + n.gas.u128();
+        }
+        !senders_element
+    }).collect();
+
+
+    /* 
+    let mut n: usize = 0;
     while n < stack.len() {
-        if stack[n].recipient == sender_raw{
+        if stack[n].sender == sender_raw{
             returnable_funds = returnable_funds + stack[n].gas.u128();
             stack.swap_remove(n);
         }
@@ -275,8 +288,9 @@ pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
             n=n+1;
         }
     }
+    */
 
-    save(&mut deps.storage, STACK_KEY, &stack)?;
+    save(&mut deps.storage, STACK_KEY, &new_stack)?;
 
 
     let mut msg_list: Vec<CosmosMsg> = vec![];
@@ -285,29 +299,33 @@ pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
     let callback_code_hash: String = load(&deps.storage, SNIP20_HASH_KEY)?;
 
     let padding: Option<String> = None;
-    let block_size = BLOCK_SIZE;
     
     let amount = Uint128::from(returnable_funds);
-    let recipient: HumanAddr = deps.api.human_address(&sender_raw)?;
+    let recipient: HumanAddr = env.message.sender;
     let cosmos_msg = transfer_msg(
-        recipient,
+        recipient.clone(),
         amount,
         padding,
-        block_size,
+        BLOCK_SIZE,
         callback_code_hash,
         snip20_address,
     )?;
     msg_list.push(cosmos_msg);
 
     
-
+    let amount_str = format!("{} ", amount);
+    let recipient_str = format!("{} ", recipient);
 
     Ok(HandleResponse {
         messages: msg_list,
-        log: vec![],
+        log: vec![
+            log("amount", &amount_str),
+            log("recipient", &recipient_str)
+        ],
         data: None,
     })
 }
+
 
 
 
