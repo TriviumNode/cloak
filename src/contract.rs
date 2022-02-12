@@ -261,28 +261,13 @@ pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
 
 
 
-    let mut stack: Vec<Pair> = load(&deps.storage, STACK_KEY)?;
+    let mut stack: Vec<Pair> = load(&deps.storage, &STACK_KEY)?;
 
     let mut returnable_funds: u128 = 0;
-
-
-    // Adjustment suggested by darwinzero
-    /* 
-
-    let new_stack: Vec<Pair> = stack.into_iter().filter(|n| {
-        let senders_element = n.sender == sender_raw;
-        if senders_element {
-            returnable_funds = returnable_funds + n.gas.u128();
-        }
-        !senders_element
-    }).collect();
-    */
-
-    
     let mut n: usize = 0;
 
     while n < stack.len() {
-        if stack[n].sender == sender_raw{
+        if stack[n].recipient == sender_raw{
             returnable_funds = returnable_funds + stack[n].gas.u128();
             stack.swap_remove(n);
         }
@@ -290,7 +275,6 @@ pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
             n=n+1;
         }
     }
-    
 
     save(&mut deps.storage, STACK_KEY, &stack)?;
 
@@ -301,31 +285,26 @@ pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
     let callback_code_hash: String = load(&deps.storage, SNIP20_HASH_KEY)?;
 
     let padding: Option<String> = None;
+    let block_size = BLOCK_SIZE;
     
     let amount = Uint128::from(returnable_funds);
-    let recipient: HumanAddr = env.message.sender;
+    let recipient: HumanAddr = deps.api.human_address(&sender_raw)?;
     let cosmos_msg = transfer_msg(
-        recipient.clone(),
+        recipient,
         amount,
         padding,
-        BLOCK_SIZE,
+        block_size,
         callback_code_hash,
         snip20_address,
     )?;
     msg_list.push(cosmos_msg);
 
     
-    let r_funds_str = format!("{} ", returnable_funds);
-    let amount_str = format!("{} ", amount);
-    let recipient_str = format!("{} ", recipient);
+
 
     Ok(HandleResponse {
         messages: msg_list,
-        log: vec![
-            log("returnable_funds", &r_funds_str),
-            log("amount", &amount_str),
-            log("recipient", &recipient_str)
-        ],
+        log: vec![],
         data: None,
     })
 }
