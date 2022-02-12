@@ -181,7 +181,7 @@ pub fn seed_wallet<S: Storage, A: Api, Q: Querier>(
     let new_pair = Pair {
         recipient: deps.api.canonical_address(&recipient)?,
         sender: deps.api.canonical_address(&env.message.sender)?,
-        gas: gas_amount
+        gas: gas_amount.u128()
     };
 
     stack.push(new_pair);
@@ -193,7 +193,7 @@ pub fn seed_wallet<S: Storage, A: Api, Q: Querier>(
         // Convert all funds to SCRT
         let mut redeemable_funds: u128 = 0;
         for pair in stack.iter() {
-            redeemable_funds = redeemable_funds + pair.gas.u128();
+            redeemable_funds = redeemable_funds + pair.gas;
         }
 
         let redeem_msg = RedeemHandleMsg::Redeem {
@@ -215,7 +215,7 @@ pub fn seed_wallet<S: Storage, A: Api, Q: Querier>(
 
             let withdrawal_coins: Vec<Coin> = vec![Coin {
                 denom: "uscrt".to_string(),
-                amount: pair.gas,
+                amount: Uint128::from(pair.gas),
             }];
 
             let cosmos_msg = CosmosMsg::Bank(BankMsg::Send {
@@ -261,7 +261,7 @@ pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
 
 
 
-    let stack: Vec<Pair> = load(&deps.storage, &STACK_KEY)?;
+    let stack: Vec<Pair> = load(&deps.storage, STACK_KEY)?;
 
     let mut returnable_funds: u128 = 0;
 
@@ -271,7 +271,7 @@ pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
     let new_stack: Vec<Pair> = stack.into_iter().filter(|n| {
         let senders_element = n.sender == sender_raw;
         if senders_element {
-            returnable_funds = returnable_funds + n.gas.u128();
+            returnable_funds = returnable_funds + n.gas;
         }
         !senders_element
     }).collect();
@@ -458,7 +458,7 @@ pub fn force_pool<S: Storage, A: Api, Q: Querier>(
     let mut stack: Vec<Pair> = load(&deps.storage, STACK_KEY)?;
     let mut redeemable_funds: u128 = 0;
     for pair in stack.iter() {
-        redeemable_funds = redeemable_funds + pair.gas.u128();
+        redeemable_funds = redeemable_funds + pair.gas;
     }
 
     let redeem_msg = RedeemHandleMsg::Redeem {
@@ -480,7 +480,7 @@ pub fn force_pool<S: Storage, A: Api, Q: Querier>(
 
         let withdrawal_coins: Vec<Coin> = vec![Coin {
             denom: "uscrt".to_string(),
-            amount: pair.gas,
+            amount: Uint128::from(pair.gas),
         }];
 
         let cosmos_msg = CosmosMsg::Bank(BankMsg::Send {

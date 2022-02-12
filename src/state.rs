@@ -45,7 +45,7 @@ pub struct Config {
 pub struct  Pair {
     pub recipient: CanonicalAddr,
     pub sender: CanonicalAddr,
-    pub gas: Uint128
+    pub gas: u128
 }
 
 
