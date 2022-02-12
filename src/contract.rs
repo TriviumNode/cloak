@@ -268,8 +268,7 @@ pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
     let mut returnable_funds: u128 = 0;
 
 
-    // Adjustment suggested by darwinzero
-
+    // Filters out senders entries and adds up total token count
     let new_stack: Vec<Pair> = stack.into_iter().filter(|n| {
         let senders_element = n.sender == sender_raw;
         if senders_element {
@@ -279,18 +278,12 @@ pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
     }).collect();
 
 
-    /* 
-    let mut n: usize = 0;
-    while n < stack.len() {
-        if stack[n].sender == sender_raw{
-            returnable_funds = returnable_funds + stack[n].gas.u128();
-            stack.swap_remove(n);
-        }
-        else {
-            n=n+1;
-        }
+    if returnable_funds == 0 {
+        return Err(StdError::generic_err(
+            "You have no funds waiting in the pool.",
+        ));
     }
-    */
+
 
     save(&mut deps.storage, STACK_KEY, &new_stack)?;
 
@@ -315,15 +308,10 @@ pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
     msg_list.push(cosmos_msg);
 
     
-    let amount_str = format!("{} ", amount);
-    let recipient_str = format!("{} ", recipient);
 
     Ok(HandleResponse {
         messages: msg_list,
-        log: vec![
-            log("amount", &amount_str),
-            log("recipient", &recipient_str)
-        ],
+        log: vec![],
         data: None,
     })
 }
