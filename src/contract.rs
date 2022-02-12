@@ -85,7 +85,7 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
 pub fn receive<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
     env: Env,
-    _sender: HumanAddr,
+    sender: HumanAddr,
     _from: HumanAddr,
     amount: Uint128,
     msg: Option<Binary>,
@@ -119,6 +119,7 @@ pub fn receive<S: Storage, A: Api, Q: Querier>(
                     env,
                     &mut config,
                     recipient,
+                    sender,
                     gas_amount,      
                 )
             }
@@ -138,6 +139,7 @@ pub fn seed_wallet<S: Storage, A: Api, Q: Querier>(
     env: Env,
     config: &mut Config,
     recipient: HumanAddr,
+    sender: HumanAddr,
     gas_amount: Uint128
 ) -> StdResult<HandleResponse> {
 
@@ -180,7 +182,7 @@ pub fn seed_wallet<S: Storage, A: Api, Q: Querier>(
 
     let new_pair = Pair {
         recipient: deps.api.canonical_address(&recipient)?,
-        sender: deps.api.canonical_address(&env.message.sender)?,
+        sender: deps.api.canonical_address(&sender)?,
         gas: gas_amount.u128()
     };
 
