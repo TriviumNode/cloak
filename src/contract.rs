@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    to_binary, from_binary, log, Api, Binary, BankMsg, Coin, Env, Extern, HandleResponse, HandleResult, InitResponse, Querier,
+    to_binary, from_binary, Api, Binary, BankMsg, Coin, Env, Extern, HandleResponse, HandleResult, InitResponse, Querier,
     StdError, StdResult, Storage, Uint128, HumanAddr, CanonicalAddr, CosmosMsg
 };
 
