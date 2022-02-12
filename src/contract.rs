@@ -176,7 +176,7 @@ pub fn seed_wallet<S: Storage, A: Api, Q: Querier>(
 
 
     // Store pending tx
-    let mut stack: Vec<Pair> = load(&deps.storage, &STACK_KEY)?;
+    let mut stack: Vec<Pair> = load(&deps.storage, STACK_KEY)?;
 
     let new_pair = Pair {
         recipient: deps.api.canonical_address(&recipient)?,
@@ -261,12 +261,13 @@ pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
 
 
 
-    let stack: Vec<Pair> = load(&deps.storage, &STACK_KEY)?;
+    let mut stack: Vec<Pair> = load(&deps.storage, STACK_KEY)?;
 
     let mut returnable_funds: u128 = 0;
 
 
     // Adjustment suggested by darwinzero
+    /* 
 
     let new_stack: Vec<Pair> = stack.into_iter().filter(|n| {
         let senders_element = n.sender == sender_raw;
@@ -275,9 +276,9 @@ pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
         }
         !senders_element
     }).collect();
+    */
 
-
-    /* 
+    
     let mut n: usize = 0;
 
     while n < stack.len() {
@@ -289,9 +290,9 @@ pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
             n=n+1;
         }
     }
-    */
+    
 
-    save(&mut deps.storage, STACK_KEY, &new_stack)?;
+    save(&mut deps.storage, STACK_KEY, &stack)?;
 
 
     let mut msg_list: Vec<CosmosMsg> = vec![];
@@ -314,12 +315,14 @@ pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
     msg_list.push(cosmos_msg);
 
     
+    let r_funds_str = format!("{} ", returnable_funds);
     let amount_str = format!("{} ", amount);
     let recipient_str = format!("{} ", recipient);
 
     Ok(HandleResponse {
         messages: msg_list,
         log: vec![
+            log("returnable_funds", &r_funds_str),
             log("amount", &amount_str),
             log("recipient", &recipient_str)
         ],
@@ -455,7 +458,7 @@ pub fn force_pool<S: Storage, A: Api, Q: Querier>(
 
 
     // Convert all funds to SCRT
-    let mut stack: Vec<Pair> = load(&deps.storage, &STACK_KEY)?;
+    let mut stack: Vec<Pair> = load(&deps.storage, STACK_KEY)?;
     let mut redeemable_funds: u128 = 0;
     for pair in stack.iter() {
         redeemable_funds = redeemable_funds + pair.gas.u128();
