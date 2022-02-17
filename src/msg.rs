@@ -11,6 +11,8 @@ pub struct InitMsg {
     /// Recipient of fees and able to make adjustments
     pub admin: HumanAddr,
 
+    pub operator: HumanAddr,
+
     /// Cost of every use
     pub fee: Uint128,
 
@@ -66,21 +68,19 @@ pub enum HandleMsg {
         #[serde(default)]
         msg: Option<Binary>,
     },
+    FinalizeSeed {
+        tx_key: String,
+        sender: HumanAddr,
+    },
     ExitPool {
+        tx_key: String
     },
     ChangeFee {
         new_fee: Uint128,
     },
-    ChangeStackSize {
-        new_stack_max: u8,
-        new_stack_min: u8,
-    },
     ChangeAdmin {
         new_admin: HumanAddr,
     },
-    ForcePool {
-
-    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

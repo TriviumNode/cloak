@@ -26,6 +26,8 @@ pub const SNIP20_HASH_KEY: &[u8] = b"callback";
 pub struct Config {
     // Permissions to edit rates
     pub admin: CanonicalAddr,
+    // Permission to send out txs
+    pub operator: CanonicalAddr,
     // Marks whether txs are allowed to be sent
     pub active: bool,
 
@@ -43,8 +45,6 @@ pub struct Config {
 /// Pair of the recipient address and the gas amount they are sending
 #[derive(Serialize, Deserialize, Clone, JsonSchema, PartialEq, Debug)]
 pub struct  Pair {
-    pub recipient: CanonicalAddr,
-    pub sender: CanonicalAddr,
     pub gas: u128
 }
 
@@ -65,6 +65,24 @@ pub fn load<T: DeserializeOwned, S: ReadonlyStorage>(storage: &S, key: &[u8]) ->
 }
 
 
+/// Returns StdResult<Option<T>> from retrieving the item with the specified key.
+/// Returns Ok(None) if there is no item with that key
+///
+/// # Arguments
+///
+/// * `storage` - a reference to the storage this item is in
+/// * `key` - a byte slice representing the key that accesses the stored item
+pub fn may_load<T: DeserializeOwned, S: ReadonlyStorage>(
+    storage: &S,
+    key: &[u8],
+) -> StdResult<Option<T>> {
+    match storage.get(key) {
+        Some(value) => Bincode2::deserialize(&value).map(Some),
+        None => Ok(None),
+    }
+}
+
+
 /// Returns StdResult<()> resulting from saving an item to storage
 ///
 /// # Arguments
@@ -75,4 +93,16 @@ pub fn load<T: DeserializeOwned, S: ReadonlyStorage>(storage: &S, key: &[u8]) ->
 pub fn save<T: Serialize, S: Storage>(storage: &mut S, key: &[u8], value: &T) -> StdResult<()> {
     storage.set(key, &Bincode2::serialize(value)?);
     Ok(())
+}
+
+
+
+/// Removes an item from storage
+///
+/// # Arguments
+///
+/// * `storage` - a mutable reference to the storage this item is in
+/// * `key` - a byte slice representing the key that accesses the stored item
+pub fn remove<S: Storage>(storage: &mut S, key: &[u8]) {
+    storage.remove(key);
 }

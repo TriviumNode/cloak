@@ -8,6 +8,7 @@
     "fee",
     "max_stack",
     "min_stack",
+    "operator",
     "sscrt_addr",
     "sscrt_hash"
   ],
@@ -41,6 +42,9 @@
       "type": "integer",
       "format": "uint8",
       "minimum": 0.0
+    },
+    "operator": {
+      "$ref": "#/definitions/HumanAddr"
     },
     "sscrt_addr": {
       "$ref": "#/definitions/HumanAddr"

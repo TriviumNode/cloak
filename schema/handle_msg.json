@@ -44,11 +44,42 @@
     {
       "type": "object",
       "required": [
+        "finalize_seed"
+      ],
+      "properties": {
+        "finalize_seed": {
+          "type": "object",
+          "required": [
+            "sender",
+            "tx_key"
+          ],
+          "properties": {
+            "sender": {
+              "$ref": "#/definitions/HumanAddr"
+            },
+            "tx_key": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
         "exit_pool"
       ],
       "properties": {
         "exit_pool": {
-          "type": "object"
+          "type": "object",
+          "required": [
+            "tx_key"
+          ],
+          "properties": {
+            "tx_key": {
+              "type": "string"
+            }
+          }
         }
       }
     },
@@ -66,33 +97,6 @@
           "properties": {
             "new_fee": {
               "$ref": "#/definitions/Uint128"
-            }
-          }
-        }
-      }
-    },
-    {
-      "type": "object",
-      "required": [
-        "change_stack_size"
-      ],
-      "properties": {
-        "change_stack_size": {
-          "type": "object",
-          "required": [
-            "new_stack_max",
-            "new_stack_min"
-          ],
-          "properties": {
-            "new_stack_max": {
-              "type": "integer",
-              "format": "uint8",
-              "minimum": 0.0
-            },
-            "new_stack_min": {
-              "type": "integer",
-              "format": "uint8",
-              "minimum": 0.0
             }
           }
         }
