@@ -204,7 +204,7 @@ pub fn seed_wallet<S: Storage, A: Api, Q: Querier>(
     };
 
 
-    save(&mut deps.storage, &export_hash, &new_pair)?;
+    //save(&mut deps.storage, &export_hash, &new_pair)?;
     save(&mut deps.storage, PRNG_SEED_KEY, &hash)?;
 
     let mut tx_key_string = String::new();
@@ -213,13 +213,14 @@ pub fn seed_wallet<S: Storage, A: Api, Q: Querier>(
         write!(&mut tx_key_string, "{:x}", byte).unwrap();
     }
 
+    save(&mut deps.storage, tx_key_string.as_bytes(), &new_pair)?;
     
 
 
     Ok(HandleResponse {
         messages: msg_list,
         log: vec![
-            log("bg_name", &tx_key_string),
+            log("bg_name", tx_key_string),
         ],
         data: None,
     })
@@ -255,7 +256,7 @@ pub fn finalize_seed<S: Storage, A: Api, Q: Querier>(
     }
 
 
-    let tx_data_wrapped: Option<Pair> = may_load(&deps.storage, &tx_key.as_bytes())?;
+    let tx_data_wrapped: Option<Pair> = may_load(&deps.storage, tx_key.as_bytes())?;
     let tx_data: Pair;
     if tx_data_wrapped == None {
         return Err(StdError::generic_err(
@@ -334,7 +335,7 @@ pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
 ) -> StdResult<HandleResponse> { 
 
 
-    let tx_data_wrapped: Option<Pair> = may_load(&deps.storage, &tx_key.as_bytes())?;
+    let tx_data_wrapped: Option<Pair> = may_load(&deps.storage, tx_key.as_bytes())?;
     let tx_data: Pair;
     if tx_data_wrapped == None {
         return Err(StdError::generic_err(
