@@ -43,6 +43,12 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
 
     };
 
+    if config.fee <= config.op_share {
+        return Err(StdError::generic_err(
+            "The operator share must be less than the total fee",
+        ));
+    }
+
     let prng_seed: Vec<u8> = sha_256(base64::encode(msg.entropy).as_bytes()).to_vec();
 
     let stack: Vec<Pair> = vec![];
