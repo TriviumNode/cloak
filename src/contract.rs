@@ -7,9 +7,6 @@ use crate::msg::{ConfigResponse, HandleMsg, HandleReceiveMsg, InitMsg, QueryMsg,
 use crate::state::{Config, Pair, save, load, may_load, remove, STACK_KEY, STACK_SIZE_KEY, SNIP20_ADDRESS_KEY, SNIP20_HASH_KEY, CONFIG_KEY, PRNG_SEED_KEY};
 
 use crate::rand::{sha_256, Prng};
-use rand_chacha::ChaChaRng;
-use rand::{RngCore, SeedableRng};
-
 
 use sha2::{Digest};
 use std::convert::TryInto;

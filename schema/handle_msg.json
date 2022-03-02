@@ -92,10 +92,14 @@
         "change_fee": {
           "type": "object",
           "required": [
-            "new_fee"
+            "new_fee",
+            "new_op_share"
           ],
           "properties": {
             "new_fee": {
+              "$ref": "#/definitions/Uint128"
+            },
+            "new_op_share": {
               "$ref": "#/definitions/Uint128"
             }
           }
@@ -115,6 +119,25 @@
           ],
           "properties": {
             "new_admin": {
+              "$ref": "#/definitions/HumanAddr"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "change_operator"
+      ],
+      "properties": {
+        "change_operator": {
+          "type": "object",
+          "required": [
+            "new_operator"
+          ],
+          "properties": {
+            "new_operator": {
               "$ref": "#/definitions/HumanAddr"
             }
           }
