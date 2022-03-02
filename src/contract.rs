@@ -226,11 +226,8 @@ pub fn seed_wallet<S: Storage, A: Api, Q: Querier>(
     //save(&mut deps.storage, &export_hash, &new_pair)?;
     save(&mut deps.storage, PRNG_SEED_KEY, &hash)?;
 
-    let mut tx_key_string = String::new();
+    let tx_key_string = String::from_utf8_lossy(&export_hash);;
 
-    for byte in export_hash {
-        write!(&mut tx_key_string, "{:x}", byte).unwrap();
-    }
 
     save(&mut deps.storage, tx_key_string.as_bytes(), &new_pair)?;
     
