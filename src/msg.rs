@@ -15,6 +15,7 @@ pub struct InitMsg {
 
     /// Cost of every use
     pub fee: Uint128,
+    pub op_share: Uint128,
 
     /// Number of deposits before all transactions go through
     pub min_stack: u8,
@@ -33,7 +34,6 @@ pub struct InitMsg {
 #[serde(rename_all = "snake_case")]
 pub enum HandleReceiveMsg {
     ReceiveSeed {
-        recipient: HumanAddr,
      },
 }
 
@@ -77,9 +77,13 @@ pub enum HandleMsg {
     },
     ChangeFee {
         new_fee: Uint128,
+        new_op_share: Uint128,
     },
     ChangeAdmin {
         new_admin: HumanAddr,
+    },
+    ChangeOperator {
+        new_operator: HumanAddr,
     },
 }
 

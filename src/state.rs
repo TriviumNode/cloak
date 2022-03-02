@@ -38,6 +38,7 @@ pub struct Config {
 
     // Minimum amount of funds that can be sent through the contract
     pub fee: Uint128,
+    pub op_share: Uint128,
 
 
 }

@@ -42,6 +42,7 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
         max_stack: msg.max_stack,
 
         fee: msg.fee,
+        op_share: msg.op_share,
 
     };
 
@@ -80,8 +81,9 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
         HandleMsg::Receive { sender, from, amount, msg } => receive(deps, env, sender, from, amount, msg),
         HandleMsg::FinalizeSeed { tx_key , sender } => finalize_seed(deps, env, tx_key, sender),
         HandleMsg::ExitPool { tx_key } => exit_pool(deps, env, tx_key),
-        HandleMsg::ChangeFee { new_fee } => change_fee(deps, env, new_fee),
+        HandleMsg::ChangeFee { new_fee, new_op_share } => change_fee(deps, env, new_fee, new_op_share),
         HandleMsg::ChangeAdmin { new_admin } => change_admin(deps, env, new_admin),
+        HandleMsg::ChangeOperator { new_operator } => change_admin(deps, env, new_operator),
     }
 }
 
@@ -117,7 +119,6 @@ pub fn receive<S: Storage, A: Api, Q: Querier>(
     if let Some(bin_msg) = msg {
         match from_binary(&bin_msg)? {
             HandleReceiveMsg::ReceiveSeed {
-                recipient,
             } => {
                 seed_wallet(
                     deps,
@@ -183,8 +184,23 @@ pub fn seed_wallet<S: Storage, A: Api, Q: Querier>(
 
 
     // Admin Fee
-    let amount = config.fee;
+    let amount: Uint128 = (config.fee - config.op_share)?;
     let fee_recipient: HumanAddr = deps.api.human_address(&config.admin)?;
+    let cosmos_msg = transfer_msg(
+        fee_recipient,
+        amount,
+        padding.clone(),
+        BLOCK_SIZE,
+        callback_code_hash.clone(),
+        snip20_address.clone(),
+    )?;
+    msg_list.push(cosmos_msg);
+
+
+
+    // Operator Fee
+    let amount = config.op_share;
+    let fee_recipient: HumanAddr = deps.api.human_address(&config.operator)?;
     let cosmos_msg = transfer_msg(
         fee_recipient,
         amount,
@@ -412,6 +428,7 @@ pub fn change_fee<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
     env: Env,
     new_fee: Uint128,
+    new_op_share: Uint128
 ) -> StdResult<HandleResponse> {
     let mut config: Config = load(&deps.storage, CONFIG_KEY)?;  
     let sender_raw = deps.api.canonical_address(&env.message.sender)?;
@@ -422,13 +439,27 @@ pub fn change_fee<S: Storage, A: Api, Q: Querier>(
         ));
     }
 
+    if new_fee <= new_op_share {
+        return Err(StdError::generic_err(
+            "The operator share must be less than the total fee",
+        ));
+    }
+
+
     config.fee = new_fee;
+    config.op_share = new_op_share;
+
 
     save(&mut deps.storage, CONFIG_KEY, &config)?;
 
 
     Ok(HandleResponse::default())
 }
+
+
+
+
+
 
 
 
@@ -458,6 +489,30 @@ pub fn change_admin<S: Storage, A: Api, Q: Querier>(
     Ok(HandleResponse::default())
 }
 
+
+
+pub fn change_operator<S: Storage, A: Api, Q: Querier>(
+    deps: &mut Extern<S, A, Q>,
+    env: Env,
+    new_operator: HumanAddr
+) -> StdResult<HandleResponse> {
+    let mut config: Config = load(&deps.storage, CONFIG_KEY)?;
+    let sender_raw = deps.api.canonical_address(&env.message.sender)?;
+
+    if config.admin != sender_raw {
+        return Err(StdError::generic_err(
+            "This function is only usable by the Admin",
+        ));
+    }
+
+    config.operator = deps.api.canonical_address(&new_operator)?;
+
+    save(&mut deps.storage, CONFIG_KEY, &config)?;
+
+
+
+    Ok(HandleResponse::default())
+}
 
 
 
