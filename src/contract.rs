@@ -224,9 +224,9 @@ pub fn seed_wallet<S: Storage, A: Api, Q: Querier>(
 
 
     //save(&mut deps.storage, &export_hash, &new_pair)?;
-    save(&mut deps.storage, PRNG_SEED_KEY, &hash)?;
+    save(&mut deps.storage, PRNG_SEED_KEY, &hash.to_vec())?;
 
-    let tx_key_string = String::from_utf8_lossy(&export_hash);;
+    let tx_key_string = hex::encode(&export_hash);
 
 
     save(&mut deps.storage, tx_key_string.as_bytes(), &new_pair)?;
@@ -236,7 +236,7 @@ pub fn seed_wallet<S: Storage, A: Api, Q: Querier>(
     Ok(HandleResponse {
         messages: msg_list,
         log: vec![
-            log("bg_name", tx_key_string),
+            log("tx_code", tx_key_string),
         ],
         data: None,
     })
