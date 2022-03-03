@@ -11,8 +11,7 @@ use cosmwasm_std::{CanonicalAddr, ReadonlyStorage, StdError, StdResult, Storage,
 //use cosmwasm_storage::{PrefixedStorage, ReadonlyPrefixedStorage};
 
 pub static CONFIG_KEY: &[u8] = b"config";
-pub static STACK_SIZE_KEY: &[u8] = b"stacksize";
-pub static STACK_KEY: &[u8] = b"stack";
+pub static POOL_SIZE_KEY: &[u8] = b"poolsize";
 
 
 pub static PRNG_SEED_KEY: &[u8] = b"prng";
@@ -32,9 +31,6 @@ pub struct Config {
     pub active: bool,
 
 
-    // Range that the next stack will be randomly assigned as
-    pub min_stack: u8,
-    pub max_stack: u8,
 
     // Minimum amount of funds that can be sent through the contract
     pub fee: Uint128,

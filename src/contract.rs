@@ -3,14 +3,14 @@ use cosmwasm_std::{
     StdError, StdResult, Storage, Uint128, HumanAddr, CanonicalAddr, CosmosMsg
 };
 
-use crate::msg::{ConfigResponse, HandleMsg, HandleReceiveMsg, InitMsg, QueryMsg, RedeemHandleMsg};
-use crate::state::{Config, Pair, save, load, may_load, remove, STACK_KEY, STACK_SIZE_KEY, SNIP20_ADDRESS_KEY, SNIP20_HASH_KEY, CONFIG_KEY, PRNG_SEED_KEY};
+use crate::msg::{ConfigResponse, ExistsResponse, PoolSizeResponse, HandleMsg, HandleReceiveMsg, InitMsg, QueryMsg, RedeemHandleMsg};
+use crate::state::{Config, Pair, save, load, may_load, remove, POOL_SIZE_KEY, SNIP20_ADDRESS_KEY, SNIP20_HASH_KEY, CONFIG_KEY, PRNG_SEED_KEY};
 
 use crate::rand::{sha_256, Prng};
 
 use sha2::{Digest};
 use std::convert::TryInto;
-use std::fmt::Write;
+
 
 //Snip 20 usage
 use secret_toolkit::{snip20::handle::{register_receive_msg,transfer_msg}, 
@@ -34,10 +34,6 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
         active: true,
 
 
-
-        min_stack: msg.min_stack,
-        max_stack: msg.max_stack,
-
         fee: msg.fee,
         op_share: msg.op_share,
 
@@ -51,14 +47,14 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
 
     let prng_seed: Vec<u8> = sha_256(base64::encode(msg.entropy).as_bytes()).to_vec();
 
-    let stack: Vec<Pair> = vec![];
+    // Initial pool size of 0
+    let pool_init: u16 = 0;
 
+    save(&mut deps.storage, POOL_SIZE_KEY, &pool_init)?;
     save(&mut deps.storage, PRNG_SEED_KEY, &prng_seed)?;
     save(&mut deps.storage, CONFIG_KEY, &config)?;
     save(&mut deps.storage, SNIP20_HASH_KEY, &msg.sscrt_hash)?;
     save(&mut deps.storage, SNIP20_ADDRESS_KEY, &msg.sscrt_addr)?;
-    save(&mut deps.storage, STACK_KEY, &stack)?;
-    save(&mut deps.storage, STACK_SIZE_KEY, &msg.max_stack)?;
 
 
     Ok(InitResponse {
@@ -230,6 +226,13 @@ pub fn seed_wallet<S: Storage, A: Api, Q: Querier>(
 
 
     save(&mut deps.storage, tx_key_string.as_bytes(), &new_pair)?;
+
+
+
+    // Adjust pool size
+    let mut pool_size: u16 = load(&deps.storage, POOL_SIZE_KEY)?;
+    pool_size = pool_size + 1;
+    save(&mut deps.storage, POOL_SIZE_KEY, &pool_size)?;
     
 
 
@@ -329,6 +332,14 @@ pub fn finalize_seed<S: Storage, A: Api, Q: Querier>(
 
 
 
+
+    // Adjust pool size
+    let mut pool_size: u16 = load(&deps.storage, POOL_SIZE_KEY)?;
+    pool_size = pool_size - 1;
+    save(&mut deps.storage, POOL_SIZE_KEY, &pool_size)?;
+
+
+
     Ok(HandleResponse {
         messages: msg_list,
         log: vec![],
@@ -386,6 +397,13 @@ pub fn exit_pool<S: Storage, A: Api, Q: Querier>(
 
 
     remove(&mut deps.storage, tx_key.as_bytes());
+
+
+
+    // Adjust pool size
+    let mut pool_size: u16 = load(&deps.storage, POOL_SIZE_KEY)?;
+    pool_size = pool_size - 1;
+    save(&mut deps.storage, POOL_SIZE_KEY, &pool_size)?;
 
     
 
@@ -522,6 +540,8 @@ pub fn query<S: Storage, A: Api, Q: Querier>(
 ) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetConfig {} => to_binary(&query_config(deps)?),
+        QueryMsg::GetExists { tx_key } => to_binary(&query_tx_exists(deps, tx_key)?),
+        QueryMsg::GetPoolSize {} => to_binary(&query_pool_size(deps)?),
     }
 }
 
@@ -529,6 +549,31 @@ fn query_config<S: Storage, A: Api, Q: Querier>(deps: &Extern<S, A, Q>) -> StdRe
     let config: Config = load(&deps.storage, CONFIG_KEY)?;
 
 
-    Ok(ConfigResponse { active: config.active, stack_max: config.max_stack, stack_min: config.min_stack, fee: config.fee })
+    Ok(ConfigResponse { active: config.active, fee: config.fee })
 }
 
+
+
+fn query_tx_exists<S: Storage, A: Api, Q: Querier>(deps: &Extern<S, A, Q>, tx_key: String,) -> StdResult<ExistsResponse> {
+    
+    let exists: bool;
+
+    let tx_data_wrapped: Option<Pair> = may_load(&deps.storage, tx_key.as_bytes())?;
+    if tx_data_wrapped == None {
+        exists = false;
+    }
+    else {
+        exists = true;
+    }
+
+    Ok(ExistsResponse { exists })
+}
+
+
+fn query_pool_size<S: Storage, A: Api, Q: Querier>(deps: &Extern<S, A, Q>) -> StdResult<PoolSizeResponse> {
+    
+    let pool_size: u16 = load(&deps.storage, POOL_SIZE_KEY)?;
+
+
+    Ok(PoolSizeResponse { pool_size })
+}

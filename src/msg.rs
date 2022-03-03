@@ -17,9 +17,6 @@ pub struct InitMsg {
     pub fee: Uint128,
     pub op_share: Uint128,
 
-    /// Number of deposits before all transactions go through
-    pub min_stack: u8,
-    pub max_stack: u8,
 
     pub sscrt_addr: HumanAddr,
     pub sscrt_hash: String,
@@ -92,13 +89,27 @@ pub enum HandleMsg {
 pub enum QueryMsg {
     // GetCount returns the current count as a json-encoded number
     GetConfig {},
+    GetExists {
+        tx_key: String
+    },
+    GetPoolSize {}
 }
 
 // We define a custom struct for each query response
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
     pub active: bool,
-    pub stack_min: u8,
-    pub stack_max: u8,
     pub fee: Uint128
+}
+
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct ExistsResponse {
+    pub exists: bool
+}
+
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct PoolSizeResponse {
+    pub pool_size: u16
 }
