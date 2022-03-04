@@ -197,23 +197,39 @@ pub fn seed_wallet<S: Storage, A: Api, Q: Querier>(
 
 
 
-    // Operator Fee
-    let amount = config.op_share;
-    let fee_recipient: HumanAddr = deps.api.human_address(&config.operator)?;
-    let cosmos_msg = transfer_msg(
-        fee_recipient,
-        amount,
-        padding.clone(),
-        BLOCK_SIZE,
-        callback_code_hash.clone(),
-        snip20_address.clone(),
+    // Operator fee
+    let redeem_msg = RedeemHandleMsg::Redeem {
+        amount: config.op_share,
+        denom: Some("uscrt".to_string()),
+        padding
+    };
+
+    let cosmos_msg = redeem_msg.to_cosmos_msg(
+        callback_code_hash,
+        snip20_address,
+        None,
     )?;
     msg_list.push(cosmos_msg);
 
 
-    // Store pending tx
-    
 
+    let withdrawal_coins: Vec<Coin> = vec![Coin {
+        denom: "uscrt".to_string(),
+        amount: config.op_share,
+    }];
+
+    let cosmos_msg = CosmosMsg::Bank(BankMsg::Send {
+        from_address: env.contract.address.clone(),
+        to_address: deps.api.human_address(&config.operator)?,
+        amount: withdrawal_coins,
+    });
+    msg_list.push(cosmos_msg);
+
+
+
+
+
+    // Store pending tx
     let new_pair = Pair {
         gas: gas_amount.u128()
     };
