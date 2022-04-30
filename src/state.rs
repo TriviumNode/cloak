@@ -7,7 +7,7 @@ use secret_toolkit::{
 };
 
 
-use cosmwasm_std::{CanonicalAddr, ReadonlyStorage, StdError, StdResult, Storage, Uint128};
+use cosmwasm_std::{CanonicalAddr, ReadonlyStorage, StdError, StdResult, Storage, Uint128, HumanAddr};
 //use cosmwasm_storage::{PrefixedStorage, ReadonlyPrefixedStorage};
 
 pub static CONFIG_KEY: &[u8] = b"config";
@@ -42,7 +42,8 @@ pub struct Config {
 /// Pair of the recipient address and the gas amount they are sending
 #[derive(Serialize, Deserialize, Clone, JsonSchema, PartialEq, Debug)]
 pub struct  Pair {
-    pub gas: u128
+    pub gas: u128,
+    pub address: HumanAddr
 }
 
 

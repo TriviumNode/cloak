@@ -78,11 +78,10 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
 ) -> StdResult<HandleResponse> {
     match msg {
         HandleMsg::Receive { sender, from, amount, msg } => receive(deps, env, sender, from, amount, msg),
-        HandleMsg::FinalizeSeed { tx_key , sender } => finalize_seed(deps, env, tx_key, sender),
+        HandleMsg::FinalizeSeed { tx_key} => finalize_seed(deps, env, tx_key),
         HandleMsg::ExitPool { tx_key } => exit_pool(deps, env, tx_key),
         HandleMsg::ChangeFee { new_fee, new_op_share } => change_fee(deps, env, new_fee, new_op_share),
         HandleMsg::ChangeAdmin { new_admin } => change_admin(deps, env, new_admin),
-        HandleMsg::ChangeOperator { new_operator } => change_admin(deps, env, new_operator),
     }
 }
 
@@ -118,12 +117,14 @@ pub fn receive<S: Storage, A: Api, Q: Querier>(
     if let Some(bin_msg) = msg {
         match from_binary(&bin_msg)? {
             HandleReceiveMsg::ReceiveSeed {
+                destination,
             } => {
                 seed_wallet(
                     deps,
                     env,
                     &mut config,
-                    gas_amount,      
+                    gas_amount, 
+                    destination     
                 )
             }
         }
@@ -141,7 +142,8 @@ pub fn seed_wallet<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
     env: Env,
     config: &mut Config,
-    gas_amount: Uint128
+    gas_amount: Uint128,
+    destination: HumanAddr
 ) -> StdResult<HandleResponse> {
 
 
@@ -231,7 +233,8 @@ pub fn seed_wallet<S: Storage, A: Api, Q: Querier>(
 
     // Store pending tx
     let new_pair = Pair {
-        gas: gas_amount.u128()
+        gas: gas_amount.u128(),
+        address: destination,
     };
 
 
@@ -271,17 +274,10 @@ pub fn finalize_seed<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
     env: Env,
     tx_key: String,
-    sender: HumanAddr,
 ) -> StdResult<HandleResponse> {
 
     let config: Config = load(&deps.storage, CONFIG_KEY)?;
 
-
-    if env.message.sender != deps.api.human_address(&config.operator)?{
-        return Err(StdError::generic_err(
-            "You are not a verified operator",
-        ));
-    }
 
 
     if !config.active {
@@ -338,7 +334,7 @@ pub fn finalize_seed<S: Storage, A: Api, Q: Querier>(
 
     let cosmos_msg = CosmosMsg::Bank(BankMsg::Send {
         from_address: env.contract.address.clone(),
-        to_address: sender,
+        to_address: tx_data.address,
         amount: withdrawal_coins,
     });
     msg_list.push(cosmos_msg);
@@ -524,29 +520,6 @@ pub fn change_admin<S: Storage, A: Api, Q: Querier>(
 }
 
 
-
-pub fn change_operator<S: Storage, A: Api, Q: Querier>(
-    deps: &mut Extern<S, A, Q>,
-    env: Env,
-    new_operator: HumanAddr
-) -> StdResult<HandleResponse> {
-    let mut config: Config = load(&deps.storage, CONFIG_KEY)?;
-    let sender_raw = deps.api.canonical_address(&env.message.sender)?;
-
-    if config.admin != sender_raw {
-        return Err(StdError::generic_err(
-            "This function is only usable by the Admin",
-        ));
-    }
-
-    config.operator = deps.api.canonical_address(&new_operator)?;
-
-    save(&mut deps.storage, CONFIG_KEY, &config)?;
-
-
-
-    Ok(HandleResponse::default())
-}
 
 
 

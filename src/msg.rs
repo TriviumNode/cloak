@@ -31,6 +31,7 @@ pub struct InitMsg {
 #[serde(rename_all = "snake_case")]
 pub enum HandleReceiveMsg {
     ReceiveSeed {
+        destination: HumanAddr
      },
 }
 
@@ -67,7 +68,6 @@ pub enum HandleMsg {
     },
     FinalizeSeed {
         tx_key: String,
-        sender: HumanAddr,
     },
     ExitPool {
         tx_key: String
@@ -78,9 +78,6 @@ pub enum HandleMsg {
     },
     ChangeAdmin {
         new_admin: HumanAddr,
-    },
-    ChangeOperator {
-        new_operator: HumanAddr,
     },
 }
 
